@@ -33,13 +33,13 @@ flowchart TB
     API_C --> GW
     BATCH --> GW
     GW --> CACHE
-    CACHE -- miss --> PARSE
-    CACHE -- hit --> GW
+    CACHE -->|miss| PARSE
+    CACHE -->|hit| GW
     GATE --> STORE
     GATE --> CACHE
-    GATE -- ESCALATE --> QUEUE
+    GATE -->|ESCALATE| QUEUE
     QUEUE --> REVIEW
-    REVIEW -- corrected labels --> TRAIN
+    REVIEW -->|corrected labels| TRAIN
     TRAIN --> ART
     ART --> ML
     REG --> RULES
