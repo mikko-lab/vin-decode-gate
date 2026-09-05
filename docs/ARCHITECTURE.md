@@ -5,7 +5,7 @@ what a high-volume deployment needs, and is offered for discussion rather
 than implemented.
 
 ```mermaid
-flowchart TB
+graph TD
     WEB[Report generation]
     API_C[Partner API]
     BATCH[Bulk ingest]
