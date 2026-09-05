@@ -6,41 +6,44 @@ than implemented.
 
 ```mermaid
 flowchart TB
-    subgraph clients [Consumers]
-        WEB[Report generation]
-        API_C[Partner API]
-        BATCH[Bulk ingest]
-    end
+    WEB["Report generation"]
+    API_C["Partner API"]
+    BATCH["Bulk ingest"]
 
-    GW[API gateway<br/>auth, rate limit, quota]
-    CACHE[(Response cache<br/>full VIN + rule and model versions)]
+    GW["API gateway<br/>auth, rate limit, quota"]
+    CACHE[("Response cache<br/>full VIN + rule and model versions")]
 
-    subgraph svc [VIN Decode Gate]
-        direction TB
-        PARSE[Parse and validate<br/>ISO 3779]
-        RULES[Deterministic layer<br/>WMI register, year table]
-        ML[Learned layer<br/>model, body]
-        GATE{{Gate<br/>RULE / MODEL / ESCALATE / UNKNOWN}}
+    subgraph svc["VIN Decode Gate"]
+        PARSE["Parse and validate<br/>ISO 3779"]
+        RULES["Deterministic layer<br/>WMI register, year table,<br/>applicability policy"]
+        ML["Learned layer<br/>model, body"]
+        GATE{{"Gate<br/>RULE, MODEL, ESCALATE, UNKNOWN"}}
         PARSE --> RULES --> ML --> GATE
     end
 
-    STORE[(Decode store<br/>learned fields by VIN 1-9<br/>verdicts by full VIN)]
-    QUEUE[[Escalation queue]]
-    REVIEW[Human or secondary source]
-    REG[(Rules registry<br/>versioned WMI, year data<br/>and applicability policy)]
-    ART[(Model registry<br/>versioned artifacts)]
-    OBS[Metrics and logs<br/>verdict mix, latency, drift]
+    STORE[("Decode store<br/>learned fields by VIN 1-9<br/>verdicts by full VIN")]
+    QUEUE[["Escalation queue"]]
+    REVIEW["Human or secondary source"]
+    TRAIN["Retraining job"]
+    REG[("Rules registry<br/>versioned WMI, year data<br/>and applicability policy")]
+    ART[("Model registry<br/>versioned artifacts")]
+    OBS["Metrics and logs<br/>verdict mix, latency, drift"]
 
-    clients --> GW --> CACHE
-    CACHE -- miss --> svc
-    CACHE -- hit --> clients
+    WEB --> GW
+    API_C --> GW
+    BATCH --> GW
+    GW --> CACHE
+    CACHE -- miss --> PARSE
+    CACHE -- hit --> GW
     GATE --> STORE
     GATE --> CACHE
-    GATE -- ESCALATE --> QUEUE --> REVIEW
-    REVIEW -- corrected labels --> TRAIN[Retraining job]
-    TRAIN --> ART --> ML
+    GATE -- ESCALATE --> QUEUE
+    QUEUE --> REVIEW
+    REVIEW -- corrected labels --> TRAIN
+    TRAIN --> ART
+    ART --> ML
     REG --> RULES
-    svc --> OBS
+    GATE --> OBS
 ```
 
 ## Notes on the choices
